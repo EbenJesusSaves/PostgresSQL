@@ -12,3 +12,11 @@ CREATE TABLE books (
     book_id INT REFERENCES student(id) ON DELETE CASCADE
 )
 
+
+
+--//--------------------------------- JSONB -----------------------------//
+
+SELECT meta -> 'tags' -> 0 recipes
+-- this will get all the list of the first column for you 
+
+SELECT recipe_id, title, meta -> 'tags' FROM recipes WHERE meta -> 'tags' ? 'cake'
