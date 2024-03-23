@@ -38,7 +38,15 @@ router.get("/search", async function (req, res) {
   // for recipes without photos, return url as default.jpg
 
   const { rows } = await pool.query(
-    `SELECT DISTINCT ON (rp.photo_id) COALESCE(rp.url, 'default.jpg'), i.title, i.id AS recipe_id FROM ingredients i INNER JOIN recipes_photos rp ON i.id = rp.photo_id;`
+    `SELECT DISTINCT ON (rp.photo_id) 
+        COALESCE(rp.url, 'default.jpg') AS url, 
+        i.title, i.id AS recipe_id 
+    FROM 
+        ingredients i 
+    LEFT JOIN 
+       recipes_photos rp 
+    ON 
+        i.id = rp.photo_id;`
   );
 
   res.status(200).json({ status: "implemented successfully", rows });
@@ -54,7 +62,14 @@ router.get("/get", async (req, res) => {
   //    name the ingredient title `ingredient_title`
   //
   const { rows } = await pool.query(
-    ` SELECT title AS recipe_title, image AS recipe_image, type AS recipe_type FROM ingredients`
+    ` SELECT 
+          title AS ingredient_title, 
+          image AS ingredient_image, 
+          type AS ingredient_type 
+      FROM 
+          ingredients 
+      WHERE id=$1`,
+    [recipeId]
   );
 
   //
@@ -62,7 +77,8 @@ router.get("/get", async (req, res) => {
   //    return the title, body, and url (named the same)
   //
   const photos = await pool.query(
-    `SELECT r.title, r.body rp.url  FROM recipes r INNER JOIN recipes_photos rp on r.id = rp.recipe_id;`
+    `SELECT r.title, r.body, rp.url  FROM recipes r INNER JOIN recipes_photos rp ON r.recipe_id = rp.recipe_id WHERE r.recipe_id=$1;`,
+    [recipeId]
   );
 
   //
@@ -70,9 +86,13 @@ router.get("/get", async (req, res) => {
   // return the body as body
   // if no row[0] has no photo, return it as default.jpg
 
-  res
-    .status(201)
-    .json({ status: "not implemented", rows, Photos: photos.rows });
+  res.status(201).json({
+    status: "not implemented",
+    ingredients: rows,
+    photos: photos.rows.map((p) => p.url),
+    title: photos.rows[0].title,
+    body: photos.rows[0].body,
+  });
 });
 /**
  * Student code ends here
